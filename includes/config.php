@@ -25,6 +25,56 @@ try {
     die("เชื่อมต่อฐานข้อมูลไม่สำเร็จ: " . $e->getMessage());
 }
 
+// สร้างบัญชี admin เริ่มต้นถ้าไม่มี
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ? AND role = 'admin'");
+    $stmt->execute(['admin']);
+
+    if ($stmt->fetchColumn() == 0) {
+        // สร้างบัญชี admin ใหม่
+        $admin_password = password_hash('admin123', PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("
+            INSERT INTO users (username, password, role, first_name, last_name, phone, emergency_contact, status, has_room)
+            VALUES (?, ?, 'admin', 'Administrator', 'System', '0812345678', '0898765432', 'active', 0)
+        ");
+        $stmt->execute(['admin', $admin_password]);
+    }
+
+    // อัปเดต password ของบัญชี admin หากมีอยู่แล้วแต่ password ไม่ถูกต้อง
+    $stmt = $pdo->prepare("SELECT password FROM users WHERE username = 'admin' AND role = 'admin'");
+    $stmt->execute();
+    $current_hash = $stmt->fetchColumn();
+
+    if ($current_hash && !password_verify('admin123', $current_hash)) {
+        $new_hash = password_hash('admin123', PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE username = 'admin' AND role = 'admin'");
+        $stmt->execute([$new_hash]);
+    }
+
+    // สร้างบัญชี user ตัวอย่างถ้าไม่มี
+    $test_users = [
+        ['john_doe', 'user123', 'John', 'Doe', '0823456789', '0887654321'],
+        ['jane_smith', 'user123', 'Jane', 'Smith', '0834567890', '0876543210']
+    ];
+
+    foreach ($test_users as $user) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+        $stmt->execute([$user[0]]);
+
+        if ($stmt->fetchColumn() == 0) {
+            $user_password = password_hash($user[1], PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("
+                INSERT INTO users (username, password, role, first_name, last_name, phone, emergency_contact, status, has_room)
+                VALUES (?, ?, 'user', ?, ?, ?, ?, 'active', 0)
+            ");
+            $stmt->execute([$user[0], $user_password, $user[2], $user[3], $user[4], $user[5]]);
+        }
+    }
+
+} catch(PDOException $e) {
+    // ไม่ต้องแสดงข้อผิดพลาดในการสร้างผู้ใช้เริ่มต้น
+}
+
 // ฟังก์ชันตรวจสอบการเข้าสู่ระบบ
 function isLoggedIn() {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
