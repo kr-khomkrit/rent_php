@@ -116,4 +116,82 @@ function formatDate($date) {
 function formatMoney($amount) {
     return number_format($amount, 2) . '';
 }
+
+// ฟังก์ชันจัดรูปแบบเดือน/ปี
+function formatBillingMonth($date) {
+    if (empty($date)) return '-';
+    $thai_months = [
+        1 => 'มกราคม', 2 => 'กุมภาพันธ์', 3 => 'มีนาคม', 4 => 'เมษายน',
+        5 => 'พฤษภาคม', 6 => 'มิถุนายน', 7 => 'กรกฎาคม', 8 => 'สิงหาคม',
+        9 => 'กันยายน', 10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
+    ];
+    $month = (int)date('n', strtotime($date));
+    $year = (int)date('Y', strtotime($date)) + 543; // แปลงเป็น พ.ศ.
+    return $thai_months[$month] . ' ' . $year;
+}
+
+// ฟังก์ชันคำนวณค่าน้ำ
+function calculateWaterBill($previous, $current, $rate) {
+    $unit = $current - $previous;
+    return $unit * $rate;
+}
+
+// ฟังก์ชันคำนวณค่าไฟ
+function calculateElectricityBill($previous, $current, $rate) {
+    $unit = $current - $previous;
+    return $unit * $rate;
+}
+
+// ฟังก์ชันดึงเลขมิเตอร์เดือนก่อนหน้า
+function getPreviousMeterReading($pdo, $contract_id) {
+    $stmt = $pdo->prepare("
+        SELECT water_current, electricity_current
+        FROM utility_bills
+        WHERE contract_id = ?
+        ORDER BY billing_month DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$contract_id]);
+    $result = $stmt->fetch();
+
+    if ($result) {
+        return [
+            'water_previous' => $result['water_current'],
+            'electricity_previous' => $result['electricity_current']
+        ];
+    }
+
+    return [
+        'water_previous' => 0,
+        'electricity_previous' => 0
+    ];
+}
+
+// ฟังก์ชันตรวจสอบสถานะบิล (เกินกำหนดหรือไม่)
+function getBillStatus($status, $billing_month, $paid_date = null) {
+    if ($status === 'paid') {
+        return 'paid';
+    }
+
+    // ถ้ายังไม่จ่าย ตรวจสอบว่าเกินกำหนดหรือไม่ (เกิน 7 วันหลังสิ้นเดือน)
+    $due_date = date('Y-m-d', strtotime($billing_month . ' +1 month +7 days'));
+    if (date('Y-m-d') > $due_date) {
+        return 'overdue';
+    }
+
+    return 'pending';
+}
+
+// ฟังก์ชันสร้างรายการเดือนย้อนหลัง
+function getMonthOptions($months = 12) {
+    $options = [];
+    for ($i = 0; $i < $months; $i++) {
+        $date = date('Y-m-01', strtotime("-$i months"));
+        $options[] = [
+            'value' => $date,
+            'text' => formatBillingMonth($date)
+        ];
+    }
+    return $options;
+}
 ?>

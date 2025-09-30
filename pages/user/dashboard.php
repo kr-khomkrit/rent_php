@@ -45,6 +45,19 @@ try {
     $stmt->execute([$user_id]);
     $contract_history = $stmt->fetchAll();
 
+    // ดึงบิลเดือนปัจจุบัน (ถ้ามีสัญญา active)
+    $current_month_bill = null;
+    if ($current_contract) {
+        $current_month = date('Y-m-01');
+        $stmt = $pdo->prepare("
+            SELECT *
+            FROM utility_bills
+            WHERE contract_id = ? AND billing_month = ?
+        ");
+        $stmt->execute([$current_contract['contract_id'], $current_month]);
+        $current_month_bill = $stmt->fetch();
+    }
+
 } catch (PDOException $e) {
     $error_message = 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage();
 }
@@ -82,6 +95,54 @@ require_once '../../includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- บิลเดือนปัจจุบัน -->
+<?php if ($current_contract && $current_month_bill): ?>
+<div class="card" style="border-left: 5px solid <?php echo $current_month_bill['status'] === 'paid' ? '#28a745' : '#ffc107'; ?>; margin-bottom: 1.5rem;">
+    <div class="card-header" style="background: <?php echo $current_month_bill['status'] === 'paid' ? '#d4edda' : '#fff3cd'; ?>; border-radius: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="card-title" style="margin: 0;">💰 บิลเดือนนี้ - <?php echo formatBillingMonth($current_month_bill['billing_month']); ?></h2>
+            <span class="status-badge status-<?php echo $current_month_bill['status']; ?>" style="font-size: 1.1rem;">
+                <?php
+                $status_text = ['pending' => 'รอชำระ', 'paid' => 'ชำระแล้ว', 'overdue' => 'เกินกำหนด'];
+                echo $status_text[$current_month_bill['status']] ?? $current_month_bill['status'];
+                ?>
+            </span>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 1rem;">
+        <div>
+            <strong>ค่าเช่า:</strong><br>
+            <span style="font-size: 1.3rem; color: #667eea;">฿<?php echo formatMoney($current_month_bill['rental_price']); ?></span>
+        </div>
+        <div>
+            <strong>ค่าน้ำ:</strong><br>
+            <span style="font-size: 1.1rem;"><?php echo $current_month_bill['water_unit']; ?> หน่วย</span><br>
+            <span style="font-size: 1.3rem; color: #667eea;">฿<?php echo formatMoney($current_month_bill['water_total']); ?></span>
+        </div>
+        <div>
+            <strong>ค่าไฟ:</strong><br>
+            <span style="font-size: 1.1rem;"><?php echo $current_month_bill['electricity_unit']; ?> หน่วย</span><br>
+            <span style="font-size: 1.3rem; color: #667eea;">฿<?php echo formatMoney($current_month_bill['electricity_total']); ?></span>
+        </div>
+        <div>
+            <strong>ยอดรวมทั้งหมด:</strong><br>
+            <span style="font-size: 1.8rem; font-weight: bold; color: #28a745;">฿<?php echo formatMoney($current_month_bill['total_amount']); ?></span>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+        <a href="<?php echo SITE_URL; ?>pages/user/my_bills.php" class="btn btn-primary">ดูรายละเอียดบิล</a>
+    </div>
+</div>
+<?php elseif ($current_contract && !$current_month_bill): ?>
+<div class="card" style="background: #f8f9fa; margin-bottom: 1.5rem;">
+    <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+        <h3>ยังไม่มีบิลสำหรับเดือนนี้</h3>
+        <p style="color: #666;">รอผู้ดูแลระบบแจ้งบิลค่าน้ำค่าไฟ</p>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ข้อมูลห้องปัจจุบัน -->
 <?php if ($current_contract): ?>

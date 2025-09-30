@@ -29,6 +29,21 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as active_contracts FROM contracts WHERE status = 'active'");
     $active_contracts = $stmt->fetchColumn();
 
+    // สถิติบิลเดือนปัจจุบัน
+    $current_month = date('Y-m-01');
+    $stmt = $pdo->prepare("
+        SELECT
+            COUNT(*) as total_bills,
+            SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_bills,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_bills,
+            SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END) as revenue_this_month,
+            SUM(CASE WHEN status = 'pending' THEN total_amount ELSE 0 END) as pending_amount
+        FROM utility_bills
+        WHERE billing_month = ?
+    ");
+    $stmt->execute([$current_month]);
+    $bills_stats = $stmt->fetch();
+
     // ดึงข้อมูลห้องแต่ละโซน
     $stmt = $pdo->query("
         SELECT z.zone_name, r.room_id, r.room_number, r.status,
@@ -60,7 +75,7 @@ require_once '../../includes/header.php';
     <div class="alert alert-error"><?php echo h($error_message); ?></div>
 <?php endif; ?>
 
-<!-- สถิติ -->
+<!-- สถิติทั่วไป -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-number"><?php echo $total_rooms; ?></div>
@@ -85,6 +100,42 @@ require_once '../../includes/header.php';
     <div class="stat-card">
         <div class="stat-number"><?php echo $active_contracts; ?></div>
         <div class="stat-label">สัญญาที่ใช้งานอยู่</div>
+    </div>
+</div>
+
+<!-- สถิติรายได้เดือนนี้ -->
+<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <div class="card-header" style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.2);">
+        <h2 class="card-title" style="color: white; margin: 0;">💰 รายได้เดือนนี้ - <?php echo formatBillingMonth($current_month); ?></h2>
+    </div>
+    <div class="stats-grid" style="margin: 0;">
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="stat-number" style="color: white;"><?php echo $bills_stats['total_bills'] ?: 0; ?></div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.9);">บิลทั้งหมด</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="stat-number" style="color: #90ee90;"><?php echo $bills_stats['paid_bills'] ?: 0; ?></div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.9);">ชำระแล้ว</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="stat-number" style="color: #ffd700;"><?php echo $bills_stats['pending_bills'] ?: 0; ?></div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.9);">รอชำระ</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="stat-number" style="color: white; font-size: 2rem;">฿<?php echo formatMoney($bills_stats['revenue_this_month'] ?: 0); ?></div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.9);">รายได้ที่ได้รับ</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div class="stat-number" style="color: #ffa500; font-size: 2rem;">฿<?php echo formatMoney($bills_stats['pending_amount'] ?: 0); ?></div>
+            <div class="stat-label" style="color: rgba(255,255,255,0.9);">ยอดค้างรับ</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                <a href="<?php echo SITE_URL; ?>pages/admin/utility_bills.php" class="btn btn-outline" style="color: white; border-color: white;">
+                    📋 จัดการบิล
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

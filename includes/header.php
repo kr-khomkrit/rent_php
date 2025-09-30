@@ -36,7 +36,17 @@ if (!isLoggedIn()) {
                 <li><a href="<?php echo SITE_URL; ?>pages/admin/users.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : ''; ?>">จัดการผู้ใช้</a></li>
                 <li><a href="<?php echo SITE_URL; ?>pages/admin/rooms.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'rooms.php' ? 'active' : ''; ?>">จัดการห้อง</a></li>
                 <li><a href="<?php echo SITE_URL; ?>pages/admin/contracts.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contracts.php' ? 'active' : ''; ?>">จัดการสัญญา</a></li>
+                <li><a href="<?php echo SITE_URL; ?>pages/admin/utility_bills.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'utility_bills.php' ? 'active' : ''; ?>">แจ้งค่าน้ำไฟ</a></li>
                 <li><a href="<?php echo SITE_URL; ?>pages/admin/reports.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">รายงาน</a></li>
+            </ul>
+        </div>
+    </nav>
+    <?php else: ?>
+    <nav>
+        <div class="container">
+            <ul class="nav-links">
+                <li><a href="<?php echo SITE_URL; ?>pages/user/dashboard.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">หน้าหลัก</a></li>
+                <li><a href="<?php echo SITE_URL; ?>pages/user/my_bills.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'my_bills.php' ? 'active' : ''; ?>">บิลของฉัน</a></li>
             </ul>
         </div>
     </nav>
