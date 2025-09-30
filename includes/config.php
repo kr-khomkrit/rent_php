@@ -114,6 +114,6 @@ function formatDate($date) {
 
 // ฟังก์ชันจัดรูปแบบเงิน
 function formatMoney($amount) {
-    return number_format($amount, 2) . ' บาท';
+    return number_format($amount, 2) . '';
 }
 ?>
