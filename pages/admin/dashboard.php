@@ -112,7 +112,9 @@ require_once '../../includes/header.php';
             <div class="zone-rooms">
                 <?php foreach ($zone_rooms as $room): ?>
                 <div class="room-item room-<?php echo $room['status']; ?>"
-                     title="<?php echo h($room['room_number']); ?> - <?php echo $room['status'] === 'occupied' && $room['tenant_name'] ? h($room['tenant_name']) : ucfirst($room['status']); ?>">
+                     title="<?php echo h($room['room_number']); ?> - <?php echo $room['status'] === 'occupied' && $room['tenant_name'] ? h($room['tenant_name']) : ucfirst($room['status']); ?>"
+                     onclick="goToRoomZone('<?php echo h($zone_name); ?>')"
+                     style="cursor: pointer;">
                     <?php echo h($room['room_number']); ?>
                 </div>
                 <?php endforeach; ?>
@@ -122,5 +124,11 @@ require_once '../../includes/header.php';
     </div>
 </div>
 
+<script>
+function goToRoomZone(zoneName) {
+    // ไปที่หน้าจัดการห้องพร้อมพารามิเตอร์โซน
+    window.location.href = 'rooms.php?zone=' + encodeURIComponent(zoneName);
+}
+</script>
 
 <?php require_once '../../includes/footer.php'; ?>

@@ -418,8 +418,28 @@ function showZone(zoneName) {
     document.getElementById('zone-' + zoneName).style.display = 'block';
 
     // เพิ่ม active class ให้ปุ่มที่คลิก
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // ถ้าไม่มี event (เรียกจาก URL parameter) ให้หาปุ่มที่ตรงกัน
+        allBtns.forEach(btn => {
+            if (btn.textContent.includes(zoneName)) {
+                btn.classList.add('active');
+            }
+        });
+    }
 }
+
+// ตรวจสอบ URL parameter เมื่อโหลดหน้า
+window.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const zone = urlParams.get('zone');
+
+    if (zone) {
+        // เปิด tab ที่ระบุใน URL
+        showZone(zone);
+    }
+});
 
 // Create Room Modal
 function openCreateRoomModal() {
