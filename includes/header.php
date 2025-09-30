@@ -46,6 +46,7 @@ if (!isLoggedIn()) {
         <div class="container">
             <ul class="nav-links">
                 <li><a href="<?php echo SITE_URL; ?>pages/user/dashboard.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">หน้าหลัก</a></li>
+                <li><a href="<?php echo SITE_URL; ?>pages/user/my_contract.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'my_contract.php' ? 'active' : ''; ?>">สัญญาของฉัน</a></li>
                 <li><a href="<?php echo SITE_URL; ?>pages/user/my_bills.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'my_bills.php' ? 'active' : ''; ?>">บิลของฉัน</a></li>
             </ul>
         </div>

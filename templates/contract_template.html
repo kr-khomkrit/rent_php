@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: "Sarabun", "THSarabunNew", sans-serif;
+            font-size: 14pt;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .contract-number {
+            text-align: center;
+            font-size: 12pt;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 15pt;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 3px;
+        }
+        .info-row {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .terms {
+            margin-top: 20px;
+        }
+        .terms ol {
+            padding-left: 30px;
+        }
+        .terms li {
+            margin: 8px 0;
+        }
+        .signature {
+            margin-top: 60px;
+        }
+        .signature-row {
+            display: table;
+            width: 100%;
+            margin: 30px 0;
+        }
+        .signature-col {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        td {
+            padding: 8px;
+        }
+        .label {
+            font-weight: bold;
+            width: 180px;
+        }
+    </style>
+</head>
+<body>
+    <h1>สัญญาเช่าห้องพัก</h1>
+    <div class="contract-number">เลขที่สัญญา: {{contract_number}}</div>
+
+    <div class="section">
+        <div class="section-title">ข้อมูลผู้เช่า</div>
+        <table>
+            <tr>
+                <td class="label">ชื่อ-นามสกุล:</td>
+                <td>{{tenant_name}}</td>
+            </tr>
+            <tr>
+                <td class="label">เบอร์โทรศัพท์:</td>
+                <td>{{phone}}</td>
+            </tr>
+            <tr>
+                <td class="label">เบอร์ติดต่อฉุกเฉิน:</td>
+                <td>{{emergency_contact}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">รายละเอียดห้องพัก</div>
+        <table>
+            <tr>
+                <td class="label">ห้องเลขที่:</td>
+                <td>{{room_name}}</td>
+            </tr>
+            <tr>
+                <td class="label">ค่าเช่า:</td>
+                <td>{{rental_price}} บาท/เดือน</td>
+            </tr>
+            <tr>
+                <td class="label">อัตราค่าน้ำ:</td>
+                <td>{{water_rate}} บาท/หน่วย</td>
+            </tr>
+            <tr>
+                <td class="label">อัตราค่าไฟ:</td>
+                <td>{{electricity_rate}} บาท/หน่วย</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">ระยะเวลาสัญญา</div>
+        <table>
+            <tr>
+                <td class="label">วันที่เริ่มสัญญา:</td>
+                <td>{{start_date}}</td>
+            </tr>
+            <tr>
+                <td class="label">วันที่สิ้นสุดสัญญา:</td>
+                <td>{{end_date}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="terms">
+        <div class="section-title">ข้อกำหนดและเงื่อนไขทั่วไป</div>
+        <ol>
+            <li><strong>การชำระค่าเช่า:</strong> ผู้เช่าตกลงชำระค่าเช่าล่วงหน้าทุกวันที่ 1 ของเดือน หากชำระล่าช้าเกิน 5 วัน จะมีค่าปรับวันละ 100 บาท</li>
+
+            <li><strong>ค่าน้ำค่าไฟ:</strong> ผู้เช่าจะต้องชำระค่าน้ำค่าไฟตามการใช้จริงจากมิเตอร์ โดยคิดตามอัตราที่ระบุในสัญญา</li>
+
+            <li><strong>เงินประกัน:</strong> ผู้เช่าจะต้องวางเงินประกันจำนวน 2 เดือน โดยจะคืนให้เมื่อสิ้นสุดสัญญาและห้องพักอยู่ในสภาพดี</li>
+
+            <li><strong>การดูแลรักษาห้อง:</strong> ผู้เช่ามีหน้าที่ดูแลรักษาห้องพักและทรัพย์สินให้อยู่ในสภาพดี หากมีความเสียหายจากการใช้งานผิดวิธี ผู้เช่าต้องรับผิดชอบค่าซ่อมแซม</li>
+
+            <li><strong>ห้ามปรับแต่ง:</strong> ห้ามทำการปรับปรุง ดัดแปลง หรือเจาะผนัง โดยไม่ได้รับอนุญาตจากผู้ให้เช่า</li>
+
+            <li><strong>การเข้าพัก:</strong> ห้ามนำบุคคลอื่นเข้ามาอาศัยหรือเข้ามาในห้องเป็นประจำโดยไม่ได้รับอนุญาต</li>
+
+            <li><strong>ความสงบ:</strong> ผู้เช่าต้องไม่ก่อความรำคาญหรือสร้างเสียงดังรบกวนผู้อื่น โดยเฉพาะในช่วงเวลา 22.00-06.00 น.</li>
+
+            <li><strong>ห้ามสูบบุหรี่:</strong> ห้ามสูบบุหรี่ภายในห้องพัก หากพบมีการสูบบุหรี่จะมีค่าปรับ 5,000 บาท</li>
+
+            <li><strong>ห้ามเลี้ยงสัตว์:</strong> ห้ามนำสัตว์เลี้ยงทุกชนิดเข้ามาในห้องพักโดยเด็ดขาด</li>
+
+            <li><strong>การเก็บของมีค่า:</strong> ผู้ให้เช่าไม่รับผิดชอบต่อการสูญหายของทรัพย์สินมีค่าของผู้เช่า</li>
+
+            <li><strong>การยกเลิกสัญญา:</strong> หากผู้เช่าประสงค์จะยกเลิกสัญญาก่อนกำหนด จะต้องแจ้งล่วงหน้าอย่างน้อย 30 วัน และจะไม่คืนเงินประกัน</li>
+
+            <li><strong>การตรวจห้อง:</strong> ผู้ให้เช่าสามารถเข้าตรวจห้องได้โดยต้องแจ้งให้ผู้เช่าทราบล่วงหน้าอย่างน้อย 24 ชั่วโมง ยกเว้นกรณีฉุกเฉิน</li>
+        </ol>
+    </div>
+
+    {{#if contract_terms}}
+    <div class="section">
+        <div class="section-title">เงื่อนไขพิเศษเพิ่มเติม</div>
+        <div style="padding: 10px 20px;">
+            {{contract_terms}}
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="signature">
+        <p>ทั้งสองฝ่ายได้อ่านและเข้าใจข้อความในสัญญานี้โดยตลอดแล้ว จึงได้ลงลายมือชื่อไว้เป็นสำคัญต่อหน้าพยาน</p>
+
+        <div class="signature-row">
+            <div class="signature-col">
+                <p>ลงชื่อ ............................................... ผู้ให้เช่า</p>
+                <p>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+                <p>วันที่ ......... / ......... / .........</p>
+            </div>
+            <div class="signature-col">
+                <p>ลงชื่อ ............................................... ผู้เช่า</p>
+                <p>({{tenant_name}})</p>
+                <p>วันที่ ......... / ......... / .........</p>
+            </div>
+        </div>
+
+        <div class="signature-row" style="margin-top: 40px;">
+            <div class="signature-col">
+                <p>ลงชื่อ ............................................... พยาน</p>
+                <p>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+                <p>วันที่ ......... / ......... / .........</p>
+            </div>
+            <div class="signature-col">
+                <p>ลงชื่อ ............................................... พยาน</p>
+                <p>(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+                <p>วันที่ ......... / ......... / .........</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

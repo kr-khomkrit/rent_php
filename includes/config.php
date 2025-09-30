@@ -194,4 +194,106 @@ function getMonthOptions($months = 12) {
     }
     return $options;
 }
+
+// ===================================
+// ฟังก์ชันสำหรับระบบสัญญา (Contracts)
+// ===================================
+
+// ฟังก์ชันสร้างเลขที่สัญญาอัตโนมัติ
+function generateContractNumber($pdo) {
+    try {
+        $stmt = $pdo->query("SELECT generate_contract_number() as contract_number");
+        $result = $stmt->fetch();
+        return $result['contract_number'];
+    } catch (PDOException $e) {
+        // ถ้า function ไม่มี ให้สร้างเองด้วย PHP
+        $year = date('Y');
+        $stmt = $pdo->prepare("
+            SELECT contract_number
+            FROM contracts
+            WHERE contract_number LIKE ?
+            ORDER BY contract_number DESC
+            LIMIT 1
+        ");
+        $stmt->execute(["CT-{$year}-%"]);
+        $last = $stmt->fetch();
+
+        if ($last) {
+            $parts = explode('-', $last['contract_number']);
+            $seq = intval($parts[2]) + 1;
+        } else {
+            $seq = 1;
+        }
+
+        return sprintf('CT-%d-%03d', $year, $seq);
+    }
+}
+
+// ฟังก์ชันดึงข้อมูลสัญญาพร้อมข้อมูลเต็ม
+function getContractData($pdo, $contract_id) {
+    $stmt = $pdo->prepare("
+        SELECT c.*,
+               CONCAT(u.first_name, ' ', u.last_name) as tenant_name,
+               u.phone, u.emergency_contact,
+               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.water_rate, r.electricity_rate
+        FROM contracts c
+        JOIN users u ON c.user_id = u.user_id
+        JOIN rooms r ON c.room_id = r.room_id
+        JOIN zones z ON r.zone_id = z.zone_id
+        WHERE c.contract_id = ?
+    ");
+    $stmt->execute([$contract_id]);
+    return $stmt->fetch();
+}
+
+// ฟังก์ชันแทนที่ placeholders ใน template
+function replaceContractPlaceholders($template, $data) {
+    $placeholders = [
+        '{{contract_number}}' => $data['contract_number'] ?? '',
+        '{{tenant_name}}' => $data['tenant_name'] ?? '',
+        '{{phone}}' => $data['phone'] ?? '',
+        '{{emergency_contact}}' => $data['emergency_contact'] ?? '',
+        '{{room_name}}' => $data['room_name'] ?? '',
+        '{{rental_price}}' => number_format($data['rental_price'] ?? 0, 2),
+        '{{water_rate}}' => number_format($data['water_rate'] ?? 0, 2),
+        '{{electricity_rate}}' => number_format($data['electricity_rate'] ?? 0, 2),
+        '{{start_date}}' => formatThaiDate($data['start_date'] ?? ''),
+        '{{end_date}}' => formatThaiDate($data['end_date'] ?? ''),
+        '{{contract_terms}}' => nl2br(htmlspecialchars($data['contract_terms'] ?? '')),
+    ];
+
+    // แทนที่ placeholders
+    $html = $template;
+    foreach ($placeholders as $key => $value) {
+        $html = str_replace($key, $value, $html);
+    }
+
+    // จัดการกับ conditional {{#if contract_terms}}
+    if (empty($data['contract_terms'])) {
+        $html = preg_replace('/\{\{#if contract_terms\}\}.*?\{\{\/if\}\}/s', '', $html);
+    } else {
+        $html = str_replace(['{{#if contract_terms}}', '{{/if}}'], '', $html);
+    }
+
+    return $html;
+}
+
+// ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย
+function formatThaiDate($date) {
+    if (empty($date)) return '';
+
+    $thai_months = [
+        1 => 'มกราคม', 2 => 'กุมภาพันธ์', 3 => 'มีนาคม', 4 => 'เมษายน',
+        5 => 'พฤษภาคม', 6 => 'มิถุนายน', 7 => 'กรกฎาคม', 8 => 'สิงหาคม',
+        9 => 'กันยายน', 10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
+    ];
+
+    $timestamp = strtotime($date);
+    $day = date('j', $timestamp);
+    $month = (int)date('n', $timestamp);
+    $year = (int)date('Y', $timestamp) + 543;
+
+    return "{$day} {$thai_months[$month]} {$year}";
+}
 ?>

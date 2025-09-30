@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(composer:*)",
+      "Bash(cat:*)",
+      "Bash(/c/xampp/php/php.exe:*)"
     ],
     "deny": [],
     "ask": []

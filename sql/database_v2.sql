@@ -53,17 +53,21 @@ CREATE TABLE users (
 -- ============================================
 CREATE TABLE contracts (
     contract_id INT AUTO_INCREMENT PRIMARY KEY,
+    contract_number VARCHAR(50) UNIQUE COMMENT 'เลขที่สัญญา เช่น CT-2025-001',
     user_id INT NOT NULL,
     room_id INT NOT NULL,
     rental_price DECIMAL(10,2) NOT NULL COMMENT 'ค่าเช่าต่อเดือน',
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    contract_terms TEXT,
+    contract_terms TEXT COMMENT 'เงื่อนไขพิเศษเพิ่มเติม',
+    contract_template TEXT COMMENT 'Template สัญญาที่ใช้',
     status ENUM('active', 'expired', 'terminated') DEFAULT 'active',
+    created_by INT NULL COMMENT 'admin ที่สร้างสัญญา',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE
+    FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -249,19 +253,48 @@ INSERT INTO users (username, password, role, first_name, last_name, phone, emerg
 ('jane_smith', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'Jane', 'Smith', '0834567890', '0876543210', FALSE);
 
 -- ============================================
+-- Stored Procedure สำหรับสร้างเลขที่สัญญาอัตโนมัติ
+-- ============================================
+DELIMITER $$
+CREATE FUNCTION generate_contract_number()
+RETURNS VARCHAR(50)
+DETERMINISTIC
+BEGIN
+    DECLARE new_number VARCHAR(50);
+    DECLARE current_year INT;
+    DECLARE next_seq INT;
+
+    SET current_year = YEAR(CURDATE());
+
+    -- หาเลขลำดับล่าสุดของปีนี้
+    SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(contract_number, '-', -1) AS UNSIGNED)), 0) + 1
+    INTO next_seq
+    FROM contracts
+    WHERE contract_number LIKE CONCAT('CT-', current_year, '-%');
+
+    -- สร้างเลขที่สัญญา CT-YYYY-XXX
+    SET new_number = CONCAT('CT-', current_year, '-', LPAD(next_seq, 3, '0'));
+
+    RETURN new_number;
+END$$
+DELIMITER ;
+
+-- ============================================
 -- สรุปโครงสร้างฐานข้อมูล
 -- ============================================
 -- ตารางทั้งหมด 6 ตาราง:
 -- 1. zones - โซนห้อง
 -- 2. rooms - ห้องพัก (มี water_rate, electricity_rate เป็นค่าเริ่มต้น)
 -- 3. users - ผู้ใช้งาน
--- 4. contracts - สัญญาเช่า
+-- 4. contracts - สัญญาเช่า (เพิ่ม contract_number, contract_template)
 -- 5. utility_bills - บิลค่าน้ำค่าไฟรายเดือน (ใหม่)
 -- 6. payments - ประวัติการชำระเงิน (ใหม่)
 
 -- View: v_utility_bills_detail - รวมข้อมูลบิลแบบละเอียด
+-- Function: generate_contract_number() - สร้างเลขที่สัญญาอัตโนมัติ
 
 SELECT 'Database created successfully!' as status,
        'Total tables: 6' as info1,
        'New tables: utility_bills, payments' as info2,
-       'View created: v_utility_bills_detail' as info3;
+       'View created: v_utility_bills_detail' as info3,
+       'Function: generate_contract_number()' as info4;
