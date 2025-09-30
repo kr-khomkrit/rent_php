@@ -93,6 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $end_date = $_POST['end_date'];
         $contract_terms = trim($_POST['contract_terms']);
 
+        // ข้อมูลเพิ่มเติมที่อาจมีการแก้ไข
+        $first_name = trim($_POST['first_name'] ?? '');
+        $last_name = trim($_POST['last_name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $emergency_contact = trim($_POST['emergency_contact'] ?? '');
+        $water_rate = floatval($_POST['water_rate']);
+        $electricity_rate = floatval($_POST['electricity_rate']);
+
         if (empty($user_id) || empty($rental_price) || empty($start_date) || empty($end_date)) {
             $error_message = 'กรุณากรอกข้อมูลให้ครบถ้วน';
         } else {
@@ -107,12 +115,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('ผู้ใช้คนนี้มีสัญญาที่ยังใช้งานอยู่แล้ว');
                 }
 
-                // สร้างสัญญาใหม่
+                // อัปเดตข้อมูลผู้ใช้หากมีการแก้ไข
                 $stmt = $pdo->prepare("
-                    INSERT INTO contracts (user_id, room_id, rental_price, start_date, end_date, contract_terms, status)
-                    VALUES (?, ?, ?, ?, ?, ?, 'active')
+                    UPDATE users
+                    SET first_name = ?, last_name = ?, phone = ?, emergency_contact = ?
+                    WHERE user_id = ?
                 ");
-                $stmt->execute([$user_id, $room_id, $rental_price, $start_date, $end_date, $contract_terms]);
+                $stmt->execute([$first_name, $last_name, $phone, $emergency_contact, $user_id]);
+
+                // อัปเดตข้อมูลห้อง (ค่าน้ำ ค่าไฟ)
+                $stmt = $pdo->prepare("UPDATE rooms SET water_rate = ?, electricity_rate = ? WHERE room_id = ?");
+                $stmt->execute([$water_rate, $electricity_rate, $room_id]);
+
+                // สร้างสัญญาใหม่ พร้อมเลขที่สัญญา
+                $contract_number = generateContractNumber($pdo);
+                $stmt = $pdo->prepare("
+                    INSERT INTO contracts (contract_number, user_id, room_id, rental_price, start_date, end_date, contract_terms, status, created_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                ");
+                $stmt->execute([$contract_number, $user_id, $room_id, $rental_price, $start_date, $end_date, $contract_terms, $_SESSION['user_id']]);
 
                 // อัปเดตสถานะห้อง
                 $stmt = $pdo->prepare("UPDATE rooms SET status = 'occupied' WHERE room_id = ?");
@@ -123,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$user_id]);
 
                 $pdo->commit();
-                $success_message = 'ปล่อยเช่าห้องเรียบร้อยแล้ว';
+                $success_message = "ปล่อยเช่าห้องเรียบร้อยแล้ว เลขที่สัญญา: {$contract_number}";
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $error_message = $e->getMessage();
@@ -149,20 +170,42 @@ try {
     ");
     $rooms = $stmt->fetchAll();
 
+    // สร้าง JSON ข้อมูลห้องสำหรับ JavaScript
+    $rooms_data = [];
+    foreach ($rooms as $room) {
+        $rooms_data[$room['room_id']] = [
+            'water_rate' => $room['water_rate'],
+            'electricity_rate' => $room['electricity_rate']
+        ];
+    }
+
     // จัดกลุ่มห้องตามโซน
     $zones = [];
     foreach ($rooms as $room) {
         $zones[$room['zone_name']][] = $room;
     }
 
-    // ดึงรายชื่อผู้ใช้ที่ไม่มีห้อง
+    // ดึงรายชื่อผู้ใช้ที่ไม่มีห้อง พร้อมข้อมูลทั้งหมด
     $stmt = $pdo->query("
-        SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name
+        SELECT user_id, first_name, last_name, CONCAT(first_name, ' ', last_name) as full_name,
+               phone, emergency_contact
         FROM users
         WHERE role = 'user' AND has_room = 0 AND status = 'active'
         ORDER BY first_name, last_name
     ");
     $available_users = $stmt->fetchAll();
+
+    // แปลงเป็น JSON สำหรับใช้ใน JavaScript
+    $users_data = [];
+    foreach ($available_users as $user) {
+        $users_data[$user['user_id']] = [
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'full_name' => $user['full_name'],
+            'phone' => $user['phone'],
+            'emergency_contact' => $user['emergency_contact']
+        ];
+    }
 
     // ดึงรายชื่อโซนทั้งหมด
     $stmt = $pdo->query("SELECT zone_id, zone_name FROM zones ORDER BY zone_name");
@@ -327,7 +370,7 @@ require_once '../../includes/header.php';
 
 <!-- Modal ปล่อยเช่าห้อง -->
 <div id="rentRoomModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto;">
         <h3>ปล่อยเช่าห้อง</h3>
         <form id="rentRoomForm" method="POST" action="">
             <input type="hidden" name="action" value="rent_room">
@@ -340,7 +383,7 @@ require_once '../../includes/header.php';
 
             <div class="form-group">
                 <label for="rent_user_id">ผู้เช่า *</label>
-                <select id="rent_user_id" name="user_id" class="form-control" required>
+                <select id="rent_user_id" name="user_id" class="form-control" required onchange="loadUserData()">
                     <option value="">เลือกผู้เช่า</option>
                     <?php foreach ($available_users as $user): ?>
                         <option value="<?php echo $user['user_id']; ?>"><?php echo h($user['full_name']); ?></option>
@@ -348,33 +391,87 @@ require_once '../../includes/header.php';
                 </select>
             </div>
 
+            <!-- ข้อมูลผู้เช่า -->
+            <div class="card" style="background: #f8f9fa; padding: 1rem; margin-bottom: 1rem; border: 1px solid #dee2e6; border-radius: 8px;">
+                <h4 style="margin: 0 0 1rem 0; color: #495057; font-size: 1rem;">ข้อมูลผู้เช่า</h4>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="rent_first_name">ชื่อ *</label>
+                            <input type="text" id="rent_first_name" name="first_name" class="form-control" placeholder="ชื่อ" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="rent_last_name">นามสกุล *</label>
+                            <input type="text" id="rent_last_name" name="last_name" class="form-control" placeholder="นามสกุล" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="rent_phone">เบอร์โทรศัพท์ *</label>
+                            <input type="text" id="rent_phone" name="phone" class="form-control" placeholder="เบอร์โทรศัพท์" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="rent_emergency_contact">เบอร์ติดต่อฉุกเฉิน</label>
+                            <input type="text" id="rent_emergency_contact" name="emergency_contact" class="form-control" placeholder="เบอร์ติดต่อฉุกเฉิน">
+                        </div>
+                    </div>
+                </div>
+
+                <small style="color: #6c757d; font-size: 0.875rem;">
+                    💡 ข้อมูลจะถูกอัปเดตในระบบหากมีการแก้ไข
+                </small>
+            </div>
+
             <div class="form-row">
                 <div class="form-col">
                     <div class="form-group">
-                        <label for="rent_rental_price">ค่าเช่า</label>
+                        <label for="rent_rental_price">ค่าเช่า/เดือน (บาท) *</label>
                         <input type="number" id="rent_rental_price" name="rental_price" class="form-control" step="0.01" min="0" required>
                     </div>
                 </div>
                 <div class="form-col">
                     <div class="form-group">
-                        <label for="rent_start_date">วันที่เริ่มสัญญา</label>
+                        <label for="rent_water_rate">ค่าน้ำ/หน่วย (บาท) *</label>
+                        <input type="number" id="rent_water_rate" name="water_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="rent_electricity_rate">ค่าไฟ/หน่วย (บาท) *</label>
+                        <input type="number" id="rent_electricity_rate" name="electricity_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="rent_start_date">วันที่เริ่มสัญญา *</label>
                         <input type="date" id="rent_start_date" name="start_date" class="form-control" required>
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="rent_end_date">วันสิ้นสุดสัญญา</label>
+                <label for="rent_end_date">วันสิ้นสุดสัญญา *</label>
                 <input type="date" id="rent_end_date" name="end_date" class="form-control" required>
             </div>
 
             <div class="form-group">
-                <label for="rent_contract_terms">ข้อกำหนดสัญญา</label>
-                <textarea id="rent_contract_terms" name="contract_terms" class="form-control" rows="4" placeholder="ระบุข้อกำหนดเพิ่มเติม (ถ้ามี)"></textarea>
+                <label for="rent_contract_terms">ข้อกำหนดสัญญาเพิ่มเติม</label>
+                <textarea id="rent_contract_terms" name="contract_terms" class="form-control" rows="3" placeholder="ระบุข้อกำหนดพิเศษเพิ่มเติม (ถ้ามี)"></textarea>
             </div>
 
             <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-success">ปล่อยเช่า</button>
+                <button type="submit" class="btn btn-success">✓ สร้างสัญญาและปล่อยเช่า</button>
                 <button type="button" class="btn btn-danger" onclick="closeRentRoomModal()">ยกเลิก</button>
             </div>
         </form>
@@ -473,9 +570,35 @@ function closeEditRoomModal() {
     document.getElementById('editRoomModal').style.display = 'none';
 }
 
+// ข้อมูล Users และ Rooms จาก PHP
+const usersData = <?php echo json_encode($users_data); ?>;
+const roomsData = <?php echo json_encode($rooms_data); ?>;
+
+function loadUserData() {
+    const userId = document.getElementById('rent_user_id').value;
+    if (userId && usersData[userId]) {
+        const userData = usersData[userId];
+        document.getElementById('rent_first_name').value = userData.first_name || '';
+        document.getElementById('rent_last_name').value = userData.last_name || '';
+        document.getElementById('rent_phone').value = userData.phone || '';
+        document.getElementById('rent_emergency_contact').value = userData.emergency_contact || '';
+    } else {
+        document.getElementById('rent_first_name').value = '';
+        document.getElementById('rent_last_name').value = '';
+        document.getElementById('rent_phone').value = '';
+        document.getElementById('rent_emergency_contact').value = '';
+    }
+}
+
 function rentRoom(roomId, roomDisplay) {
     document.getElementById('rent_room_id').value = roomId;
     document.getElementById('rent_room_display').value = roomDisplay;
+
+    // โหลดข้อมูลห้อง (ค่าน้ำ ค่าไฟ)
+    if (roomsData[roomId]) {
+        document.getElementById('rent_water_rate').value = roomsData[roomId].water_rate || 0;
+        document.getElementById('rent_electricity_rate').value = roomsData[roomId].electricity_rate || 0;
+    }
 
     // ตั้งวันเริ่มสัญญาเป็นวันนี้
     const today = new Date().toISOString().split('T')[0];

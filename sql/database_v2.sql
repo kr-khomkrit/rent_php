@@ -22,8 +22,8 @@ CREATE TABLE rooms (
     zone_id INT NOT NULL,
     room_number VARCHAR(20) NOT NULL,
     status ENUM('available', 'occupied', 'maintenance') DEFAULT 'available',
-    water_rate DECIMAL(10,2) DEFAULT 18.00 COMMENT 'อัตราค่าน้ำต่อหน่วย (ค่าเริ่มต้น)',
-    electricity_rate DECIMAL(10,2) DEFAULT 5.00 COMMENT 'อัตราค่าไฟต่อหน่วย (ค่าเริ่มต้น)',
+    water_rate DECIMAL(10,2) DEFAULT 0.00 COMMENT 'อัตราค่าน้ำต่อหน่วย (ค่าเริ่มต้น)',
+    electricity_rate DECIMAL(10,2) DEFAULT 0.00 COMMENT 'อัตราค่าไฟต่อหน่วย (ค่าเริ่มต้น)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (zone_id) REFERENCES zones(zone_id) ON DELETE CASCADE,
@@ -204,44 +204,44 @@ INSERT INTO zones (zone_name) VALUES
 -- สร้างห้องตัวอย่างสำหรับแต่ละโซน
 -- Zone A (10 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(1, 'A-01', 'available', 18.00, 5.00), (1, 'A-02', 'available', 18.00, 5.00),
-(1, 'A-03', 'available', 18.00, 5.00), (1, 'A-04', 'available', 18.00, 5.00),
-(1, 'A-05', 'available', 18.00, 5.00), (1, 'A-06', 'available', 18.00, 5.00),
-(1, 'A-07', 'available', 18.00, 5.00), (1, 'A-08', 'available', 18.00, 5.00),
-(1, 'A-09', 'available', 18.00, 5.00), (1, 'A-10', 'available', 18.00, 5.00);
+(1, 'A-01', 'available', 0.00, 0.00), (1, 'A-02', 'available', 0.00, 0.00),
+(1, 'A-03', 'available', 0.00, 0.00), (1, 'A-04', 'available', 0.00, 0.00),
+(1, 'A-05', 'available', 0.00, 0.00), (1, 'A-06', 'available', 0.00, 0.00),
+(1, 'A-07', 'available', 0.00, 0.00), (1, 'A-08', 'available', 0.00, 0.00),
+(1, 'A-09', 'available', 0.00, 0.00), (1, 'A-10', 'available', 0.00, 0.00);
 
 -- Zone B (10 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(2, 'B-01', 'available', 18.00, 5.00), (2, 'B-02', 'available', 18.00, 5.00),
-(2, 'B-03', 'available', 18.00, 5.00), (2, 'B-04', 'available', 18.00, 5.00),
-(2, 'B-05', 'available', 18.00, 5.00), (2, 'B-06', 'available', 18.00, 5.00),
-(2, 'B-07', 'available', 18.00, 5.00), (2, 'B-08', 'available', 18.00, 5.00),
-(2, 'B-09', 'available', 18.00, 5.00), (2, 'B-10', 'available', 18.00, 5.00);
+(2, 'B-01', 'available', 0.00, 0.00), (2, 'B-02', 'available', 0.00, 0.00),
+(2, 'B-03', 'available', 0.00, 0.00), (2, 'B-04', 'available', 0.00, 0.00),
+(2, 'B-05', 'available', 0.00, 0.00), (2, 'B-06', 'available', 0.00, 0.00),
+(2, 'B-07', 'available', 0.00, 0.00), (2, 'B-08', 'available', 0.00, 0.00),
+(2, 'B-09', 'available', 0.00, 0.00), (2, 'B-10', 'available', 0.00, 0.00);
 
 -- Zone C (8 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(3, 'C-01', 'available', 18.00, 5.00), (3, 'C-02', 'available', 18.00, 5.00),
-(3, 'C-03', 'available', 18.00, 5.00), (3, 'C-04', 'available', 18.00, 5.00),
-(3, 'C-05', 'available', 18.00, 5.00), (3, 'C-06', 'available', 18.00, 5.00),
-(3, 'C-07', 'available', 18.00, 5.00), (3, 'C-08', 'available', 18.00, 5.00);
+(3, 'C-01', 'available', 0.00, 0.00), (3, 'C-02', 'available', 0.00, 0.00),
+(3, 'C-03', 'available', 0.00, 0.00), (3, 'C-04', 'available', 0.00, 0.00),
+(3, 'C-05', 'available', 0.00, 0.00), (3, 'C-06', 'available', 0.00, 0.00),
+(3, 'C-07', 'available', 0.00, 0.00), (3, 'C-08', 'available', 0.00, 0.00);
 
 -- Zone D (8 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(4, 'D-01', 'available', 18.00, 5.00), (4, 'D-02', 'available', 18.00, 5.00),
-(4, 'D-03', 'available', 18.00, 5.00), (4, 'D-04', 'available', 18.00, 5.00),
-(4, 'D-05', 'available', 18.00, 5.00), (4, 'D-06', 'available', 18.00, 5.00),
-(4, 'D-07', 'available', 18.00, 5.00), (4, 'D-08', 'available', 18.00, 5.00);
+(4, 'D-01', 'available', 0.00, 0.00), (4, 'D-02', 'available', 0.00, 0.00),
+(4, 'D-03', 'available', 0.00, 0.00), (4, 'D-04', 'available', 0.00, 0.00),
+(4, 'D-05', 'available', 0.00, 0.00), (4, 'D-06', 'available', 0.00, 0.00),
+(4, 'D-07', 'available', 0.00, 0.00), (4, 'D-08', 'available', 0.00, 0.00);
 
 -- Zone E (6 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(5, 'E-01', 'available', 18.00, 5.00), (5, 'E-02', 'available', 18.00, 5.00),
-(5, 'E-03', 'available', 18.00, 5.00), (5, 'E-04', 'available', 18.00, 5.00),
-(5, 'E-05', 'available', 18.00, 5.00), (5, 'E-06', 'available', 18.00, 5.00);
+(5, 'E-01', 'available', 0.00, 0.00), (5, 'E-02', 'available', 0.00, 0.00),
+(5, 'E-03', 'available', 0.00, 0.00), (5, 'E-04', 'available', 0.00, 0.00),
+(5, 'E-05', 'available', 0.00, 0.00), (5, 'E-06', 'available', 0.00, 0.00);
 
 -- Zone VIP (4 ห้อง)
 INSERT INTO rooms (zone_id, room_number, status, water_rate, electricity_rate) VALUES
-(6, 'VIP-01', 'available', 20.00, 6.00), (6, 'VIP-02', 'available', 20.00, 6.00),
-(6, 'VIP-03', 'available', 20.00, 6.00), (6, 'VIP-04', 'available', 20.00, 6.00);
+(6, 'VIP-01', 'available', 0.00, 0.00), (6, 'VIP-02', 'available', 0.00, 0.00),
+(6, 'VIP-03', 'available', 0.00, 0.00), (6, 'VIP-04', 'available', 0.00, 0.00);
 
 -- สร้าง Admin ตัวอย่าง (password: admin123)
 INSERT INTO users (username, password, role, first_name, last_name, phone, emergency_contact) VALUES

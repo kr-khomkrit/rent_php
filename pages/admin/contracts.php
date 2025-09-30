@@ -54,68 +54,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
         }
 
-    } elseif ($action === 'create_contract') {
-        // สร้างสัญญาใหม่
+    } elseif ($action === 'update_contract') {
+        // อัปเดตสัญญา
+        $contract_id = intval($_POST['contract_id']);
         $user_id = intval($_POST['user_id']);
         $room_id = intval($_POST['room_id']);
         $rental_price = floatval($_POST['rental_price']);
         $start_date = $_POST['start_date'];
         $end_date = $_POST['end_date'];
-        $contract_terms = trim($_POST['contract_terms'] ?? '');
+        $contract_terms = trim($_POST['contract_terms']);
+
+        // ข้อมูลผู้เช่าที่อาจมีการแก้ไข
+        $first_name = trim($_POST['first_name'] ?? '');
+        $last_name = trim($_POST['last_name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $emergency_contact = trim($_POST['emergency_contact'] ?? '');
+
+        // ข้อมูลห้อง
+        $water_rate = floatval($_POST['water_rate']);
+        $electricity_rate = floatval($_POST['electricity_rate']);
 
         try {
             $pdo->beginTransaction();
 
-            // สร้างเลขที่สัญญา
-            $contract_number = generateContractNumber($pdo);
-
-            // สร้างสัญญา
+            // อัปเดตข้อมูลผู้ใช้
             $stmt = $pdo->prepare("
-                INSERT INTO contracts
-                (contract_number, user_id, room_id, rental_price, start_date, end_date, contract_terms, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                UPDATE users
+                SET first_name = ?, last_name = ?, phone = ?, emergency_contact = ?
+                WHERE user_id = ?
             ");
-            $stmt->execute([
-                $contract_number, $user_id, $room_id, $rental_price,
-                $start_date, $end_date, $contract_terms, $_SESSION['user_id']
-            ]);
+            $stmt->execute([$first_name, $last_name, $phone, $emergency_contact, $user_id]);
 
-            // อัปเดตสถานะห้อง
-            $stmt = $pdo->prepare("UPDATE rooms SET status = 'occupied' WHERE room_id = ?");
-            $stmt->execute([$room_id]);
+            // อัปเดตข้อมูลห้อง (ค่าน้ำ ค่าไฟ)
+            $stmt = $pdo->prepare("UPDATE rooms SET water_rate = ?, electricity_rate = ? WHERE room_id = ?");
+            $stmt->execute([$water_rate, $electricity_rate, $room_id]);
 
-            // อัปเดตสถานะ user
-            $stmt = $pdo->prepare("UPDATE users SET has_room = 1 WHERE user_id = ?");
-            $stmt->execute([$user_id]);
-
-            $pdo->commit();
-            $success_message = "สร้างสัญญาเรียบร้อย เลขที่: {$contract_number}";
-
-        } catch (Exception $e) {
-            $pdo->rollBack();
-            $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-        } catch (PDOException $e) {
-            $pdo->rollBack();
-            $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-        }
-
-    } elseif ($action === 'update_contract') {
-        // อัปเดตสัญญา
-        $contract_id = intval($_POST['contract_id']);
-        $rental_price = floatval($_POST['rental_price']);
-        $end_date = $_POST['end_date'];
-        $contract_terms = trim($_POST['contract_terms']);
-
-        try {
+            // อัปเดตสัญญา
             $stmt = $pdo->prepare("
                 UPDATE contracts
-                SET rental_price = ?, end_date = ?, contract_terms = ?
+                SET rental_price = ?, start_date = ?, end_date = ?, contract_terms = ?
                 WHERE contract_id = ? AND status = 'active'
             ");
-            $stmt->execute([$rental_price, $end_date, $contract_terms, $contract_id]);
+            $stmt->execute([$rental_price, $start_date, $end_date, $contract_terms, $contract_id]);
+
+            $pdo->commit();
             $success_message = 'อัปเดตสัญญาเรียบร้อยแล้ว';
 
         } catch (PDOException $e) {
+            $pdo->rollBack();
             $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
         }
     }
@@ -136,9 +122,11 @@ try {
 
     $stmt = $pdo->query("
         SELECT c.*,
+               u.first_name, u.last_name,
                CONCAT(u.first_name, ' ', u.last_name) as tenant_name,
-               u.phone,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name
+               u.phone, u.emergency_contact,
+               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN users u ON c.user_id = u.user_id
         JOIN rooms r ON c.room_id = r.room_id
@@ -147,26 +135,6 @@ try {
         ORDER BY c.created_at DESC
     ");
     $contracts = $stmt->fetchAll();
-
-    // ดึงรายการห้องว่าง
-    $stmt = $pdo->query("
-        SELECT r.room_id, CONCAT(z.zone_name, '-', r.room_number) as room_name,
-               r.water_rate, r.electricity_rate
-        FROM rooms r
-        JOIN zones z ON r.zone_id = z.zone_id
-        WHERE r.status = 'available'
-        ORDER BY room_name
-    ");
-    $available_rooms = $stmt->fetchAll();
-
-    // ดึงรายการ user ที่ยังไม่มีห้อง
-    $stmt = $pdo->query("
-        SELECT user_id, CONCAT(first_name, ' ', last_name) as full_name, phone
-        FROM users
-        WHERE role = 'user' AND has_room = 0
-        ORDER BY first_name
-    ");
-    $available_users = $stmt->fetchAll();
 
 } catch (PDOException $e) {
     $error_message = 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage();
@@ -185,12 +153,6 @@ require_once '../../includes/header.php';
     <div class="alert alert-error"><?php echo h($error_message); ?></div>
 <?php endif; ?>
 
-<!-- ปุ่มสร้างสัญญาใหม่ -->
-<?php if (count($available_rooms) > 0 && count($available_users) > 0): ?>
-<div style="margin-bottom: 1.5rem;">
-    <button onclick="openCreateContractModal()" class="btn btn-success">+ สร้างสัญญาใหม่</button>
-</div>
-<?php endif; ?>
 
 <!-- ตัวกรองสัญญา -->
 <div class="card">
@@ -326,11 +288,13 @@ require_once '../../includes/header.php';
 
 <!-- Modal แก้ไขสัญญา -->
 <div id="editContractModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto;">
         <h3>แก้ไขสัญญา</h3>
         <form id="editContractForm" method="POST" action="">
             <input type="hidden" name="action" value="update_contract">
             <input type="hidden" name="contract_id" id="edit_contract_id">
+            <input type="hidden" name="user_id" id="edit_user_id">
+            <input type="hidden" name="room_id" id="edit_room_id">
 
             <div class="form-group">
                 <label>สัญญาเลขที่</label>
@@ -338,37 +302,91 @@ require_once '../../includes/header.php';
             </div>
 
             <div class="form-group">
-                <label>ผู้เช่า</label>
-                <input type="text" id="edit_tenant_name" class="form-control" readonly>
-            </div>
-
-            <div class="form-group">
                 <label>ห้อง</label>
                 <input type="text" id="edit_room_name" class="form-control" readonly>
+            </div>
+
+            <!-- ข้อมูลผู้เช่า -->
+            <div class="card" style="background: #f8f9fa; padding: 1rem; margin-bottom: 1rem; border: 1px solid #dee2e6; border-radius: 8px;">
+                <h4 style="margin: 0 0 1rem 0; color: #495057; font-size: 1rem;">ข้อมูลผู้เช่า</h4>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="edit_first_name">ชื่อ *</label>
+                            <input type="text" id="edit_first_name" name="first_name" class="form-control" placeholder="ชื่อ" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="edit_last_name">นามสกุล *</label>
+                            <input type="text" id="edit_last_name" name="last_name" class="form-control" placeholder="นามสกุล" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="edit_phone">เบอร์โทรศัพท์ *</label>
+                            <input type="text" id="edit_phone" name="phone" class="form-control" placeholder="เบอร์โทรศัพท์" required>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="edit_emergency_contact">เบอร์ติดต่อฉุกเฉิน</label>
+                            <input type="text" id="edit_emergency_contact" name="emergency_contact" class="form-control" placeholder="เบอร์ติดต่อฉุกเฉิน">
+                        </div>
+                    </div>
+                </div>
+
+                <small style="color: #6c757d; font-size: 0.875rem;">
+                    💡 ข้อมูลจะถูกอัปเดตในระบบหากมีการแก้ไข
+                </small>
             </div>
 
             <div class="form-row">
                 <div class="form-col">
                     <div class="form-group">
-                        <label for="edit_rental_price">ค่าเช่า (บาท/เดือน) *</label>
+                        <label for="edit_rental_price">ค่าเช่า/เดือน (บาท) *</label>
                         <input type="number" id="edit_rental_price" name="rental_price" class="form-control" step="0.01" min="0" required>
                     </div>
                 </div>
                 <div class="form-col">
                     <div class="form-group">
-                        <label for="edit_end_date">วันสิ้นสุดสัญญา *</label>
-                        <input type="date" id="edit_end_date" name="end_date" class="form-control" required>
+                        <label for="edit_water_rate">ค่าน้ำ/หน่วย (บาท) *</label>
+                        <input type="number" id="edit_water_rate" name="water_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="edit_electricity_rate">ค่าไฟ/หน่วย (บาท) *</label>
+                        <input type="number" id="edit_electricity_rate" name="electricity_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="edit_start_date">วันที่เริ่มสัญญา *</label>
+                        <input type="date" id="edit_start_date" name="start_date" class="form-control" required>
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="edit_contract_terms">ข้อกำหนดสัญญา</label>
-                <textarea id="edit_contract_terms" name="contract_terms" class="form-control" rows="4"></textarea>
+                <label for="edit_end_date">วันสิ้นสุดสัญญา *</label>
+                <input type="date" id="edit_end_date" name="end_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="edit_contract_terms">ข้อกำหนดสัญญาเพิ่มเติม</label>
+                <textarea id="edit_contract_terms" name="contract_terms" class="form-control" rows="3" placeholder="ระบุข้อกำหนดพิเศษเพิ่มเติม (ถ้ามี)"></textarea>
             </div>
 
             <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-success">บันทึก</button>
+                <button type="submit" class="btn btn-success">✓ บันทึกการแก้ไข</button>
                 <button type="button" class="btn btn-danger" onclick="closeEditContractModal()">ยกเลิก</button>
             </div>
         </form>
@@ -407,10 +425,22 @@ function closeViewContractModal() {
 
 function editContract(contract) {
     document.getElementById('edit_contract_id').value = contract.contract_id;
-    document.getElementById('edit_contract_number').value = 'C' + String(contract.contract_id).padStart(4, '0');
-    document.getElementById('edit_tenant_name').value = contract.tenant_name;
+    document.getElementById('edit_user_id').value = contract.user_id;
+    document.getElementById('edit_room_id').value = contract.room_id;
+    document.getElementById('edit_contract_number').value = contract.contract_number || ('C' + String(contract.contract_id).padStart(4, '0'));
     document.getElementById('edit_room_name').value = contract.room_name;
+
+    // ข้อมูลผู้เช่า
+    document.getElementById('edit_first_name').value = contract.first_name || '';
+    document.getElementById('edit_last_name').value = contract.last_name || '';
+    document.getElementById('edit_phone').value = contract.phone || '';
+    document.getElementById('edit_emergency_contact').value = contract.emergency_contact || '';
+
+    // ข้อมูลสัญญาและห้อง
     document.getElementById('edit_rental_price').value = contract.rental_price;
+    document.getElementById('edit_water_rate').value = contract.water_rate || 0;
+    document.getElementById('edit_electricity_rate').value = contract.electricity_rate || 0;
+    document.getElementById('edit_start_date').value = contract.start_date;
     document.getElementById('edit_end_date').value = contract.end_date;
     document.getElementById('edit_contract_terms').value = contract.contract_terms || '';
 
@@ -462,108 +492,6 @@ document.getElementById('editContractModal').onclick = function(e) {
     }
 }
 
-function openCreateContractModal() {
-    document.getElementById('createContractModal').style.display = 'block';
-}
-
-function closeCreateContractModal() {
-    document.getElementById('createContractModal').style.display = 'none';
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const createModal = document.getElementById('createContractModal');
-    if (createModal) {
-        createModal.onclick = function(e) {
-            if (e.target === this) {
-                closeCreateContractModal();
-            }
-        }
-    }
-});
-</script>
-
-<!-- Modal สร้างสัญญาใหม่ -->
-<div id="createContractModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
-        <h3>สร้างสัญญาใหม่</h3>
-        <form method="POST">
-            <input type="hidden" name="action" value="create_contract">
-
-            <div class="form-group">
-                <label>เลือกผู้เช่า *</label>
-                <select name="user_id" class="form-control" required>
-                    <option value="">-- เลือกผู้เช่า --</option>
-                    <?php foreach ($available_users as $user): ?>
-                        <option value="<?php echo $user['user_id']; ?>">
-                            <?php echo h($user['full_name']); ?> (<?php echo h($user['phone']); ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>เลือกห้อง *</label>
-                <select name="room_id" id="create_room_id" class="form-control" required onchange="showRoomInfo()">
-                    <option value="">-- เลือกห้อง --</option>
-                    <?php foreach ($available_rooms as $room): ?>
-                        <option value="<?php echo $room['room_id']; ?>"
-                                data-water="<?php echo $room['water_rate']; ?>"
-                                data-electricity="<?php echo $room['electricity_rate']; ?>">
-                            <?php echo h($room['room_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <div id="room_info" style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;"></div>
-            </div>
-
-            <div class="form-group">
-                <label>ค่าเช่า (บาท/เดือน) *</label>
-                <input type="number" name="rental_price" class="form-control" step="0.01" min="0" required>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>วันที่เริ่มสัญญา *</label>
-                        <input type="date" name="start_date" class="form-control" required>
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>วันที่สิ้นสุดสัญญา *</label>
-                        <input type="date" name="end_date" class="form-control" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>เงื่อนไขพิเศษเพิ่มเติม (ถ้ามี)</label>
-                <textarea name="contract_terms" class="form-control" rows="4"
-                          placeholder="ระบุเงื่อนไขพิเศษเพิ่มเติมนอกเหนือจากเงื่อนไขมาตรฐาน..."></textarea>
-            </div>
-
-            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-success">สร้างสัญญา</button>
-                <button type="button" class="btn btn-danger" onclick="closeCreateContractModal()">ยกเลิก</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function showRoomInfo() {
-    const select = document.getElementById('create_room_id');
-    const option = select.options[select.selectedIndex];
-    const info = document.getElementById('room_info');
-
-    if (option.value) {
-        const water = option.dataset.water;
-        const electricity = option.dataset.electricity;
-        info.innerHTML = `💧 ค่าน้ำ: ${water} บาท/หน่วย | ⚡ ค่าไฟ: ${electricity} บาท/หน่วย`;
-    } else {
-        info.innerHTML = '';
-    }
-}
 </script>
 
 <style>

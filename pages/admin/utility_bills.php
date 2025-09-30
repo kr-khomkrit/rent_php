@@ -106,6 +106,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
         }
+    } elseif ($action === 'update_rates') {
+        // อัปเดตค่าน้ำค่าไฟทั้งหมด
+        $water_rate = floatval($_POST['water_rate']);
+        $electricity_rate = floatval($_POST['electricity_rate']);
+        $room_ids = $_POST['room_ids'] ?? 'all';
+
+        try {
+            if ($room_ids === 'all') {
+                // อัปเดตทุกห้อง
+                $stmt = $pdo->prepare("UPDATE rooms SET water_rate = ?, electricity_rate = ?");
+                $stmt->execute([$water_rate, $electricity_rate]);
+                $success_message = 'อัปเดตค่าน้ำค่าไฟทุกห้องเรียบร้อยแล้ว';
+            } else {
+                // อัปเดตเฉพาะห้องที่เลือก
+                $room_ids_array = explode(',', $room_ids);
+                $placeholders = implode(',', array_fill(0, count($room_ids_array), '?'));
+                $stmt = $pdo->prepare("UPDATE rooms SET water_rate = ?, electricity_rate = ? WHERE room_id IN ($placeholders)");
+                $params = array_merge([$water_rate, $electricity_rate], $room_ids_array);
+                $stmt->execute($params);
+                $success_message = 'อัปเดตค่าน้ำค่าไฟห้องที่เลือกเรียบร้อยแล้ว';
+            }
+        } catch (PDOException $e) {
+            $error_message = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+        }
     }
 }
 
@@ -150,6 +174,16 @@ try {
         $bills_map[$bill['contract_id']] = $bill;
     }
 
+    // ดึงรายการห้องทั้งหมดสำหรับ Modal กำหนดค่าน้ำค่าไฟ
+    $stmt = $pdo->query("
+        SELECT r.room_id, CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.water_rate, r.electricity_rate, r.status
+        FROM rooms r
+        JOIN zones z ON r.zone_id = z.zone_id
+        ORDER BY z.zone_name, r.room_number
+    ");
+    $all_rooms = $stmt->fetchAll();
+
 } catch (PDOException $e) {
     $error_message = 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ' . $e->getMessage();
 }
@@ -160,17 +194,22 @@ require_once '../../includes/header.php';
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <h1 class="page-title" style="margin: 0;">แจ้งค่าน้ำค่าไฟ</h1>
 
-    <!-- เลือกเดือน/ปี -->
-    <form method="GET" onsubmit="return convertDateToMonthYear()" style="display: flex; gap: 0.5rem; align-items: center;">
-        <input type="hidden" name="month" id="month_value">
-        <input type="hidden" name="year" id="year_value">
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <!-- ปุ่มกำหนดค่าน้ำค่าไฟ -->
+        <button onclick="openRatesSettingModal()" class="btn btn-success">⚙️ กำหนดค่าน้ำค่าไฟ</button>
 
-        <label style="font-weight: 600;">เลือกเดือน/ปี:</label>
-        <input type="date" id="date_picker" class="form-control" style="width: 180px;"
-               value="<?php echo $selected_month; ?>" required>
+        <!-- เลือกเดือน/ปี -->
+        <form method="GET" onsubmit="return convertDateToMonthYear()" style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="hidden" name="month" id="month_value">
+            <input type="hidden" name="year" id="year_value">
 
-        <button type="submit" class="btn btn-primary">กรอง</button>
-    </form>
+            <label style="font-weight: 600;">เลือกเดือน/ปี:</label>
+            <input type="date" id="date_picker" class="form-control" style="width: 180px;"
+                   value="<?php echo $selected_month; ?>" required>
+
+            <button type="submit" class="btn btn-primary">กรอง</button>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -548,6 +587,123 @@ document.getElementById('editBillModal').onclick = function(e) {
 document.getElementById('markPaidModal').onclick = function(e) {
     if (e.target === this) closeMarkPaidModal();
 }
+
+// Modal กำหนดค่าน้ำค่าไฟ
+function openRatesSettingModal() {
+    document.getElementById('ratesSettingModal').style.display = 'block';
+}
+
+function closeRatesSettingModal() {
+    document.getElementById('ratesSettingModal').style.display = 'none';
+}
+
+function toggleRoomSelection() {
+    const applyTo = document.querySelector('input[name="apply_to"]:checked').value;
+    const roomSelection = document.getElementById('roomSelectionSection');
+
+    if (applyTo === 'selected') {
+        roomSelection.style.display = 'block';
+    } else {
+        roomSelection.style.display = 'none';
+    }
+}
+
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('input[name="selected_rooms[]"]');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+}
+
+function submitRatesForm() {
+    const waterRate = document.getElementById('rates_water_rate').value;
+    const electricityRate = document.getElementById('rates_electricity_rate').value;
+    const applyTo = document.querySelector('input[name="apply_to"]:checked').value;
+
+    let roomIds = 'all';
+
+    if (applyTo === 'selected') {
+        const selectedCheckboxes = document.querySelectorAll('input[name="selected_rooms[]"]:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('กรุณาเลือกห้องอย่างน้อย 1 ห้อง');
+            return false;
+        }
+        roomIds = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+    }
+
+    document.getElementById('room_ids_input').value = roomIds;
+    return confirm('คุณต้องการอัปเดตค่าน้ำค่าไฟใช่หรือไม่?');
+}
+
+document.getElementById('ratesSettingModal').onclick = function(e) {
+    if (e.target === this) closeRatesSettingModal();
+}
 </script>
+
+<!-- Modal กำหนดค่าน้ำค่าไฟ -->
+<div id="ratesSettingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto;">
+        <h3>⚙️ กำหนดค่าน้ำค่าไฟ</h3>
+
+        <form method="POST" onsubmit="return submitRatesForm()">
+            <input type="hidden" name="action" value="update_rates">
+            <input type="hidden" name="room_ids" id="room_ids_input">
+
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="rates_water_rate">ค่าน้ำ/หน่วย (บาท) *</label>
+                        <input type="number" id="rates_water_rate" name="water_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label for="rates_electricity_rate">ค่าไฟ/หน่วย (บาท) *</label>
+                        <input type="number" id="rates_electricity_rate" name="electricity_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">นำไปใช้กับ:</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="apply_to" value="all" checked onchange="toggleRoomSelection()">
+                        <span>ทุกห้อง</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="apply_to" value="selected" onchange="toggleRoomSelection()">
+                        <span>เลือกห้อง</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ส่วนเลือกห้อง -->
+            <div id="roomSelectionSection" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="font-weight: 600;">เลือกห้อง:</label>
+                    <label style="cursor: pointer; color: #3b82f6;">
+                        <input type="checkbox" onchange="toggleSelectAll(this)"> เลือกทั้งหมด
+                    </label>
+                </div>
+
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 0.5rem; background: white;">
+                    <?php foreach ($all_rooms as $room): ?>
+                        <label style="display: block; padding: 0.3rem 0.5rem; cursor: pointer; hover: background: #f1f5f9;">
+                            <input type="checkbox" name="selected_rooms[]" value="<?php echo $room['room_id']; ?>">
+                            <?php echo h($room['room_name']); ?>
+                            <span style="color: #6b7280; font-size: 0.875rem;">
+                                (น้ำ: <?php echo $room['water_rate']; ?> บาท, ไฟ: <?php echo $room['electricity_rate']; ?> บาท)
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-success">✓ บันทึก</button>
+                <button type="button" class="btn btn-danger" onclick="closeRatesSettingModal()">ยกเลิก</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php require_once '../../includes/footer.php'; ?>
