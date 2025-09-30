@@ -210,8 +210,6 @@ require_once '../../includes/header.php';
                         <th>สถานะ</th>
                         <th>ผู้เช่าปัจจุบัน</th>
                         <th>ค่าเช่า</th>
-                        <th>ค่าน้ำ</th>
-                        <th>ค่าไฟ</th>
                         <th>วันที่เริ่ม</th>
                         <th>วันสิ้นสุด</th>
                         <th>การจัดการ</th>
@@ -238,12 +236,6 @@ require_once '../../includes/header.php';
                         </td>
                         <td title="<?php echo $room['rental_price'] ? formatMoney($room['rental_price']) : '-'; ?>">
                             <?php echo $room['rental_price'] ? formatMoney($room['rental_price']) : '-'; ?>
-                        </td>
-                        <td title="<?php echo formatMoney($room['water_rate']); ?>">
-                            <?php echo formatMoney($room['water_rate']); ?>
-                        </td>
-                        <td title="<?php echo formatMoney($room['electricity_rate']); ?>">
-                            <?php echo formatMoney($room['electricity_rate']); ?>
                         </td>
                         <td title="<?php echo $room['start_date'] ? formatDate($room['start_date']) : '-'; ?>">
                             <?php echo $room['start_date'] ? formatDate($room['start_date']) : '-'; ?>
@@ -324,20 +316,6 @@ require_once '../../includes/header.php';
                 </select>
             </div>
 
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label for="edit_water_rate">ค่าน้ำ </label>
-                        <input type="number" id="edit_water_rate" name="water_rate" class="form-control" step="0.01" min="0">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label for="edit_electricity_rate">ค่าไฟ </label>
-                        <input type="number" id="edit_electricity_rate" name="electricity_rate" class="form-control" step="0.01" min="0">
-                    </div>
-                </div>
-            </div>
 
             <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
                 <button type="submit" class="btn btn-success">บันทึก</button>
@@ -625,16 +603,15 @@ document.getElementById('rentRoomModal').onclick = function(e) {
     padding: 0.75rem 0.5rem;
 }
 
+
 /* กำหนดความกว้างแต่ละคอลัมน์ */
-.tab-content th:nth-child(1), .tab-content td:nth-child(1) { width: 8%; } /* หมายเลขห้อง */
-.tab-content th:nth-child(2), .tab-content td:nth-child(2) { width: 8%; } /* สถานะ */
-.tab-content th:nth-child(3), .tab-content td:nth-child(3) { width: 18%; } /* ผู้เช่า */
-.tab-content th:nth-child(4), .tab-content td:nth-child(4) { width: 12%; } /* ค่าเช่า */
-.tab-content th:nth-child(5), .tab-content td:nth-child(5) { width: 8%; } /* ค่าน้ำ */
-.tab-content th:nth-child(6), .tab-content td:nth-child(6) { width: 8%; } /* ค่าไฟ */
-.tab-content th:nth-child(7), .tab-content td:nth-child(7) { width: 10%; } /* วันเริ่ม */
-.tab-content th:nth-child(8), .tab-content td:nth-child(8) { width: 10%; } /* วันสิ้นสุด */
-.tab-content th:nth-child(9), .tab-content td:nth-child(9) { width: 18%; } /* การจัดการ */
+.tab-content th:nth-child(1), .tab-content td:nth-child(1) { width: 10%; } /* หมายเลขห้อง */
+.tab-content th:nth-child(2), .tab-content td:nth-child(2) { width: 10%; } /* สถานะ */
+.tab-content th:nth-child(3), .tab-content td:nth-child(3) { width: 20%; } /* ผู้เช่า */
+.tab-content th:nth-child(4), .tab-content td:nth-child(4) { width: 15%; } /* ค่าเช่า */
+.tab-content th:nth-child(5), .tab-content td:nth-child(5) { width: 12%; } /* วันเริ่ม */
+.tab-content th:nth-child(6), .tab-content td:nth-child(6) { width: 12%; } /* วันสิ้นสุด */
+.tab-content th:nth-child(7), .tab-content td:nth-child(7) { width: 20%; } /* การจัดการ */
 
 /* เพิ่ม tooltip สำหรับข้อความที่ถูกตัด */
 .tab-content td[title] {
