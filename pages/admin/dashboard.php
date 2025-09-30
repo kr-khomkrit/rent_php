@@ -122,29 +122,5 @@ require_once '../../includes/header.php';
     </div>
 </div>
 
-<!-- เมนูด่วน -->
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">เมนูด่วน</h2>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-        <a href="users.php" class="btn btn-primary" style="padding: 1.5rem; text-align: center; text-decoration: none;">
-            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👥</div>
-            <div>จัดการผู้ใช้</div>
-        </a>
-        <a href="rooms.php" class="btn btn-success" style="padding: 1.5rem; text-align: center; text-decoration: none;">
-            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🏠</div>
-            <div>จัดการห้อง</div>
-        </a>
-        <a href="contracts.php" class="btn btn-warning" style="padding: 1.5rem; text-align: center; text-decoration: none;">
-            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📄</div>
-            <div>จัดการสัญญา</div>
-        </a>
-        <a href="reports.php" class="btn btn-primary" style="padding: 1.5rem; text-align: center; text-decoration: none;">
-            <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📊</div>
-            <div>รายงาน</div>
-        </a>
-    </div>
-</div>
 
 <?php require_once '../../includes/footer.php'; ?>
