@@ -41,10 +41,10 @@ $html = replaceContractPlaceholders($template, $contract);
     <style>
         body {
             font-family: "Sarabun", "THSarabunNew", sans-serif;
-            max-width: 21cm;
             margin: 0 auto;
             padding: 20px;
             background: #f5f5f5;
+
         }
         .contract-container {
             background: white;
@@ -101,17 +101,11 @@ $html = replaceContractPlaceholders($template, $contract);
     <div class="actions">
         <button onclick="window.print()" class="btn btn-primary">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
         <a href="javascript:history.back()" class="btn btn-secondary">← ย้อนกลับ</a>
-        <a href="contract_export.php?contract_id=<?php echo $contract_id; ?>" class="btn btn-success">📄 ลอง Export PDF อีกครั้ง</a>
     </div>
 
     <div class="contract-container">
         <?php echo $html; ?>
     </div>
 
-    <div class="actions">
-        <p style="color: #666;">
-            💡 <strong>วิธีบันทึกเป็น PDF:</strong> กดปุ่ม "พิมพ์" ด้านบน แล้วเลือก "Save as PDF" หรือ "Microsoft Print to PDF"
-        </p>
-    </div>
 </body>
 </html>
