@@ -86,7 +86,7 @@ require_once '../../includes/header.php';
                        class="btn btn-success"
                        target="_blank"
                        title="ดูและพิมพ์สัญญา">
-                        📄 ดู/พิมพ์สัญญา
+                         ดู/พิมพ์สัญญา
                     </a>
                     <span class="status-badge status-<?php echo $is_expired ? 'overdue' : $contract['status']; ?>" style="padding: 0.5rem 1rem;">
                         <?php
@@ -171,20 +171,6 @@ require_once '../../includes/header.php';
                 </div>
             <?php endif; ?>
 
-            <!-- การแจ้งเตือน -->
-            <?php if ($is_expired): ?>
-                <div style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
-                    ⚠️ <strong>สัญญาหมดอายุ!</strong> กรุณาติดต่อผู้ดูแลระบบเพื่อต่อสัญญา
-                </div>
-            <?php elseif ($days_left > 0 && $days_left <= 30): ?>
-                <div style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
-                    ⏰ <strong>สัญญาใกล้หมดอายุ!</strong> เหลืออีก <?php echo $days_left; ?> วัน กรุณาเตรียมต่อสัญญา
-                </div>
-            <?php elseif ($contract['status'] === 'terminated'): ?>
-                <div style="background: #f8f9fa; color: #6c757d; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
-                    ℹ️ สัญญานี้ถูกยกเลิกแล้ว
-                </div>
-            <?php endif; ?>
         </div>
     <?php endforeach; ?>
 

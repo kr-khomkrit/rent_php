@@ -37,7 +37,7 @@ $html = replaceContractPlaceholders($template, $contract);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สัญญาเช่าห้องพัก - <?php echo h($contract['contract_number']); ?></title>
+    <title>&nbsp;</title>
     <style>
         body {
             font-family: "Sarabun", "THSarabunNew", sans-serif;
@@ -83,9 +83,14 @@ $html = replaceContractPlaceholders($template, $contract);
             opacity: 0.9;
         }
         @media print {
+            @page {
+                margin: 0;
+                size: A4;
+            }
             body {
                 background: white;
                 padding: 0;
+                margin: 0;
             }
             .actions {
                 display: none;
@@ -100,12 +105,26 @@ $html = replaceContractPlaceholders($template, $contract);
 <body>
     <div class="actions">
         <button onclick="window.print()" class="btn btn-primary">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
-        <a href="javascript:history.back()" class="btn btn-secondary">← ย้อนกลับ</a>
+        <a href="javascript:history.back()" class="btn btn-secondary"> ย้อนกลับ</a>
     </div>
 
     <div class="contract-container">
         <?php echo $html; ?>
     </div>
 
+    <script>
+        // ตั้งค่า title ว่างเพื่อไม่ให้แสดง header/footer
+        document.title = '';
+
+        // เมื่อกดพิมพ์ ให้ปิด headers and footers อัตโนมัติ
+        window.onbeforeprint = function() {
+            // ตั้งค่าว่างเพื่อไม่ให้แสดงใน header/footer
+            document.title = ' ';
+        };
+
+        window.onafterprint = function() {
+            document.title = '';
+        };
+    </script>
 </body>
 </html>
