@@ -125,7 +125,7 @@ try {
                u.first_name, u.last_name,
                CONCAT(u.first_name, ' ', u.last_name) as tenant_name,
                u.phone, u.emergency_contact,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.room_number as room_name,
                r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN users u ON c.user_id = u.user_id
@@ -259,9 +259,8 @@ require_once '../../includes/header.php';
                                class="btn btn-success btn-sm"
                                target="_blank"
                                title="ดูและพิมพ์สัญญา">
-                                📄 ดูสัญญา
+                                 ดูสัญญา
                             </a>
-                            <button class="btn btn-primary btn-sm" onclick="viewContract(<?php echo h(json_encode($contract)); ?>)">ดูข้อมูล</button>
                             <?php if ($contract['status'] === 'active'): ?>
                                 <button class="btn btn-warning btn-sm" onclick="editContract(<?php echo h(json_encode($contract)); ?>)">แก้ไข</button>
                                 <button class="btn btn-danger btn-sm" onclick="terminateContract(<?php echo $contract['contract_id']; ?>, '<?php echo h($contract['tenant_name']); ?>', '<?php echo h($contract['room_name']); ?>')">ยุติสัญญา</button>

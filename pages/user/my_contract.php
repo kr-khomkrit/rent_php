@@ -11,16 +11,16 @@ if (isAdmin()) {
 $page_title = 'สัญญาเช่าของฉัน';
 $user_id = $_SESSION['user_id'];
 
-// ดึงข้อมูลสัญญาของ user
+// ดึงข้อมูลสัญญาของ user (เฉพาะที่ active)
 try {
     $stmt = $pdo->prepare("
         SELECT c.*,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.room_number as room_name,
                r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN rooms r ON c.room_id = r.room_id
         JOIN zones z ON r.zone_id = z.zone_id
-        WHERE c.user_id = ?
+        WHERE c.user_id = ? AND c.status = 'active'
         ORDER BY c.created_at DESC
     ");
     $stmt->execute([$user_id]);
@@ -188,16 +188,6 @@ require_once '../../includes/header.php';
         </div>
     <?php endforeach; ?>
 
-    <!-- คำแนะนำ -->
-    <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-        <h3 style="margin-top: 0;">💡 คำแนะนำ</h3>
-        <ul style="padding-left: 1.5rem; margin: 0;">
-            <li>กดปุ่ม "ดาวน์โหลด PDF" เพื่อบันทึกสัญญาไว้ในเครื่องของคุณ</li>
-            <li>ตรวจสอบวันที่สิ้นสุดสัญญาเป็นประจำ</li>
-            <li>หากต้องการต่อสัญญา กรุณาติดต่อผู้ดูแลระบบล่วงหน้าอย่างน้อย 30 วัน</li>
-            <li>สัญญาเช่าเป็นเอกสารสำคัญ ควรเก็บรักษาไว้เป็นหลักฐาน</li>
-        </ul>
-    </div>
 <?php endif; ?>
 
 <?php require_once '../../includes/footer.php'; ?>

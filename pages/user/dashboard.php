@@ -267,39 +267,6 @@ require_once '../../includes/header.php';
 </div>
 <?php endif; ?>
 
-<!-- สถิติส่วนตัว -->
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">สถิติ</h2>
-    </div>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-number"><?php echo $current_contract ? '1' : '0'; ?></div>
-            <div class="stat-label">ห้องปัจจุบัน</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number"><?php echo count($contract_history); ?></div>
-            <div class="stat-label">ประวัติสัญญา</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">
-                <?php
-                $total_contracts = count($contract_history) + ($current_contract ? 1 : 0);
-                echo $total_contracts;
-                ?>
-            </div>
-            <div class="stat-label">สัญญาทั้งหมด</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">
-                <?php
-                echo formatDate($user_info['created_at']);
-                ?>
-            </div>
-            <div class="stat-label">วันที่สมัครสมาชิก</div>
-        </div>
-    </div>
-</div>
 
 <style>
 .stats-grid .stat-card:last-child .stat-number {

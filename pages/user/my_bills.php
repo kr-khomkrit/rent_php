@@ -20,7 +20,7 @@ try {
     // ดึงข้อมูลสัญญาปัจจุบัน
     $stmt = $pdo->prepare("
         SELECT c.contract_id, c.rental_price,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.room_number as room_name,
                r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN rooms r ON c.room_id = r.room_id

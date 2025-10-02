@@ -138,7 +138,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT c.contract_id, c.user_id, c.room_id, c.rental_price, c.start_date, c.end_date,
                CONCAT(u.first_name, ' ', u.last_name) as tenant_name,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.room_number as room_name,
                r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN users u ON c.user_id = u.user_id
@@ -156,7 +156,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT ub.*,
                CONCAT(u.first_name, ' ', u.last_name) as tenant_name,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name
+               r.room_number as room_name
         FROM utility_bills ub
         JOIN contracts c ON ub.contract_id = c.contract_id
         JOIN users u ON c.user_id = u.user_id
@@ -176,7 +176,7 @@ try {
 
     // ดึงรายการห้องทั้งหมดสำหรับ Modal กำหนดค่าน้ำค่าไฟ
     $stmt = $pdo->query("
-        SELECT r.room_id, CONCAT(z.zone_name, '-', r.room_number) as room_name,
+        SELECT r.room_id, r.room_number as room_name,
                r.water_rate, r.electricity_rate, r.status
         FROM rooms r
         JOIN zones z ON r.zone_id = z.zone_id
