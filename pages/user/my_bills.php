@@ -87,25 +87,9 @@ require_once '../../includes/header.php';
     </div>
 <?php else: ?>
 
-    <!-- ข้อมูลห้อง -->
-    <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">ห้องของฉัน</div>
-                <h2 style="margin: 0; font-size: 2rem;"><?php echo h($current_contract['room_name']); ?></h2>
-                <div style="margin-top: 0.5rem; opacity: 0.9;">ค่าเช่า: ฿<?php echo formatMoney($current_contract['rental_price']); ?>/เดือน</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 0.9rem; opacity: 0.9;">อัตราค่าน้ำ</div>
-                <div style="font-size: 1.2rem; font-weight: 600;">฿<?php echo formatMoney($current_contract['water_rate']); ?>/หน่วย</div>
-                <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">อัตราค่าไฟ</div>
-                <div style="font-size: 1.2rem; font-weight: 600;">฿<?php echo formatMoney($current_contract['electricity_rate']); ?>/หน่วย</div>
-            </div>
-        </div>
-    </div>
 
     <!-- สถิติ -->
-    <div class="stats-grid" style="margin-bottom: 1.5rem;">
+    <div class="stats-grid" >
         <div class="stat-card">
             <div class="stat-number"><?php echo $total_bills; ?></div>
             <div class="stat-label">บิลทั้งหมด</div>
@@ -199,7 +183,7 @@ require_once '../../includes/header.php';
                     <div style="font-size: 1rem; color: #28a745; margin-top: 0.3rem;">
                         = ฿<?php echo formatMoney($bill['water_total']); ?>
                     </div>
-                    <small style="color: #999;">มิเตอร์: <?php echo $bill['water_previous']; ?> → <?php echo $bill['water_current']; ?></small>
+            
                 </div>
 
                 <!-- ค่าไฟ -->
@@ -211,7 +195,7 @@ require_once '../../includes/header.php';
                     <div style="font-size: 1rem; color: #28a745; margin-top: 0.3rem;">
                         = ฿<?php echo formatMoney($bill['electricity_total']); ?>
                     </div>
-                    <small style="color: #999;">มิเตอร์: <?php echo $bill['electricity_previous']; ?> → <?php echo $bill['electricity_current']; ?></small>
+                    
                 </div>
 
                 <?php if ($bill['other_fees'] > 0): ?>

@@ -20,7 +20,7 @@ try {
     // ดึงข้อมูลสัญญาปัจจุบัน
     $stmt = $pdo->prepare("
         SELECT c.*,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name,
+               r.room_number as room_name,
                r.water_rate, r.electricity_rate
         FROM contracts c
         JOIN rooms r ON c.room_id = r.room_id
@@ -31,19 +31,6 @@ try {
     ");
     $stmt->execute([$user_id]);
     $current_contract = $stmt->fetch();
-
-    // ดึงประวัติสัญญาเก่า
-    $stmt = $pdo->prepare("
-        SELECT c.*,
-               CONCAT(z.zone_name, '-', r.room_number) as room_name
-        FROM contracts c
-        JOIN rooms r ON c.room_id = r.room_id
-        JOIN zones z ON r.zone_id = z.zone_id
-        WHERE c.user_id = ? AND c.status IN ('expired', 'terminated')
-        ORDER BY c.created_at DESC
-    ");
-    $stmt->execute([$user_id]);
-    $contract_history = $stmt->fetchAll();
 
     // ดึงบิลเดือนปัจจุบัน (ถ้ามีสัญญา active)
     $current_month_bill = null;
@@ -221,52 +208,6 @@ require_once '../../includes/header.php';
     </div>
 </div>
 <?php endif; ?>
-
-<!-- ประวัติสัญญาเก่า -->
-<?php if (!empty($contract_history)): ?>
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">ประวัติสัญญาเก่า (<?php echo count($contract_history); ?> รายการ)</h2>
-    </div>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>สัญญาเลขที่</th>
-                    <th>ห้อง</th>
-                    <th>ค่าเช่า</th>
-                    <th>วันเริ่มสัญญา</th>
-                    <th>วันสิ้นสุด</th>
-                    <th>สถานะ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($contract_history as $contract): ?>
-                <tr>
-                    <td>C<?php echo str_pad($contract['contract_id'], 4, '0', STR_PAD_LEFT); ?></td>
-                    <td><?php echo h($contract['room_name']); ?></td>
-                    <td><?php echo formatMoney($contract['rental_price']); ?></td>
-                    <td><?php echo formatDate($contract['start_date']); ?></td>
-                    <td><?php echo formatDate($contract['end_date']); ?></td>
-                    <td>
-                        <span class="status-badge status-<?php echo $contract['status']; ?>">
-                            <?php
-                            $status_text = [
-                                'expired' => 'หมดอายุ',
-                                'terminated' => 'ยุติแล้ว'
-                            ];
-                            echo $status_text[$contract['status']] ?? $contract['status'];
-                            ?>
-                        </span>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-<?php endif; ?>
-
 
 <style>
 .stats-grid .stat-card:last-child .stat-number {
